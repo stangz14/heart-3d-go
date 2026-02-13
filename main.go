@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -102,6 +103,7 @@ func main() {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Transfer-Encoding", "chunked")
 		w.Header().Set("Connection", "keep-alive")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 
 		angle := 0.0
 		colorIndex := 0
@@ -114,7 +116,7 @@ func main() {
 				return
 			case <-ticker.C:
 				frame := renderFrame(angle)
-				output := fmt.Sprintf("\033[2J\033[H\033[3J%s%s\033[0m", colors[colorIndex], frame)
+				output := fmt.Sprintf("\033[2J\033[H%s%s\033[0m", colors[colorIndex], frame)
 
 				fmt.Fprint(w, output)
 				flusher.Flush()
@@ -131,6 +133,14 @@ func main() {
 		}
 	})
 
-	fmt.Println("Rotating Heart server is running ")
-	http.ListenAndServe(":8080", nil)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	fmt.Printf("Rotating Heart server is running on port %s ...\n", port)
+	// เปลี่ยนจาก ":8080" เป็น ":" + port
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		fmt.Printf("Error starting server: %s\n", err)
+	}
 }
